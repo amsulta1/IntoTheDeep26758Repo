@@ -68,8 +68,12 @@ public class auto extends LinearOpMode {
 
         waitForStart();
         while (opModeIsActive()) {
-            if(state == 0){
-                goForward(1000);
+            switch (state){
+                case 0:
+                    goForward(1000);
+                    break;
+                default:
+                    break;
             }
             checkToProgressState();
             telemetry.addData("rightPos", right.getCurrentPosition());
@@ -120,7 +124,7 @@ public class auto extends LinearOpMode {
             viper_controller.setPID(Vp, Vi, Vd);
             int armPos = viper.getCurrentPosition();
             double pid = viper_controller.calculate(armPos, target);
-            double ff = Math.cos(Math.toRadians(target / ticks_in_degrees)) * Wf;
+            double ff = Math.cos(Math.toRadians(target / ticks_in_degrees)) * Vf;
             return pid + ff;
         }else if(Objects.equals(name, armT)){
             arm_controller.setPID(Ap, Ai, Ad);
