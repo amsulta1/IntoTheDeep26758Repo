@@ -110,21 +110,24 @@ public class auto extends LinearOpMode {
             else if(Objects.equals(name, armT)){
                 armTarget = Ttarget + arm.getCurrentPosition();
                 target = Ttarget + arm.getCurrentPosition();
-                arm_controller.setPID(Ap, Ai, Ad);
-                int armPos = wheel.getCurrentPosition();
-                double pid = arm_controller.calculate(armPos, target);
-                double ff = Math.cos(Math.toRadians(target / ticks_in_degrees)) * Af;
-                return pid + ff;
             }
             else if(Objects.equals(name, viperT)){
                 viperTarget = Ttarget + viper.getCurrentPosition();
                 target = Ttarget + viper.getCurrentPosition();
-                viper_controller.setPID(Vp, Vi, Vd);
-                int armPos = viper.getCurrentPosition();
-                double pid = viper_controller.calculate(armPos, target);
-                double ff = Math.cos(Math.toRadians(target / ticks_in_degrees)) * Wf;
-                return pid + ff;
             }
+        }
+        if(Objects.equals(name, viperT)){
+            viper_controller.setPID(Vp, Vi, Vd);
+            int armPos = viper.getCurrentPosition();
+            double pid = viper_controller.calculate(armPos, target);
+            double ff = Math.cos(Math.toRadians(target / ticks_in_degrees)) * Wf;
+            return pid + ff;
+        }else if(Objects.equals(name, armT)){
+            arm_controller.setPID(Ap, Ai, Ad);
+            int armPos = wheel.getCurrentPosition();
+            double pid = arm_controller.calculate(armPos, target);
+            double ff = Math.cos(Math.toRadians(target / ticks_in_degrees)) * Af;
+            return pid + ff;
         }
         wheels.setPID(Wp, Wi, Wd);
         int armPos = wheel.getCurrentPosition();
