@@ -1,10 +1,10 @@
 package org.firstinspires.ftc.teamcode.drive;
-//package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -20,8 +20,13 @@ public class drive extends LinearOpMode {
     private DcMotor right;
     private DcMotor viper_slide;
     private DcMotor arm;
+    private DcMotor specarm;
     private Servo claw;
-
+    private Servo speclaw;
+    int grabbing = 0;
+    int readiness = 0;
+    int scoring = 166;
+    int resting = 0;
     double leftFrontPower;
     double leftBackPower;
     double rightFrontPower;
@@ -29,14 +34,20 @@ public class drive extends LinearOpMode {
 
     private PIDController arm_controller;
     private PIDController viper_controller;
-    public static double Ap = 0.005, Ai = 0, Ad = 0;
+    private PIDController spec_controller;
+    public static double Ap = 0.04, Ai = 0, Ad = 0;
     public static double Af = 0;
     public static double Vp = 0.008, Vi = 0, Vd = 0;
     public static double Vf = 0;
+    public static double Sp = 0.045, Si = 0, Sd = 0.001;
+    public static double Sf = 0.18;
 
     public static int arm_target = -162;
     public static int viper_target = 0;
-
+    double speciPos;
+    double speciPid;
+    double speciFF;
+    public static int specimenArmTarget;
     public final double ticks_in_degrees = 700 / 180.0;
 
     boolean liftPower = false;
@@ -75,6 +86,8 @@ public class drive extends LinearOpMode {
         right = hardwareMap.get(DcMotor.class, "rightBack");
         viper_slide = hardwareMap.get(DcMotor.class, "viper");
         arm = hardwareMap.get(DcMotor.class, "arm");
+        specarm = hardwareMap.get(DcMotor.class, "specarm");
+        speclaw = hardwareMap.get(Servo.class, "speclaw");
         runtime = new ElapsedTime();
         // ########################################################################################
         // !!! IMPORTANT Drive Information. Test your motor directions. !!!!!
@@ -93,6 +106,8 @@ public class drive extends LinearOpMode {
         // <--- Click blue icon to see important note re. testing motor directions.
         left_front_drive.setDirection(DcMotor.Direction.REVERSE);
         left.setDirection(DcMotor.Direction.REVERSE);
+        specarm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        specarm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         right_front_drive.setDirection(DcMotor.Direction.FORWARD);
         right.setDirection(DcMotor.Direction.FORWARD);
         left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -101,10 +116,19 @@ public class drive extends LinearOpMode {
         right_front_drive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         viper_slide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        specarm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // Wait for the game to start (driver presses START)
         //claw.setPosition(0.25);
+        resting = 0;
+        grabbing = 347;
+        readiness = 115;
+        scoring =  200;
+        viper_slide.setPower(-0.08);
+        specimenArmTarget = specarm.getCurrentPosition();
         arm_controller = new PIDController(Ap, Ai, Ad);
         viper_controller = new PIDController(Vp, Vi, Vd);
+        spec_controller = new PIDController(Sp, Si, Sd);
+        specarm.setDirection(DcMotorSimple.Direction.REVERSE);
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -133,7 +157,7 @@ public class drive extends LinearOpMode {
                 rightBackPower = rightBackPower / max;
             }
             // Send calculated power to wheels.
-            if (gamepad1.right_bumper) {
+            if (gamepad1.right_trigger > 0) {
                 left_front_drive.setPower(leftFrontPower / 3);
                 right_front_drive.setPower(rightFrontPower / 3);
                 left.setPower(leftBackPower / 3);
@@ -143,6 +167,15 @@ public class drive extends LinearOpMode {
                 right_front_drive.setPower(rightFrontPower);
                 left.setPower(leftBackPower);
                 right.setPower(rightBackPower);
+            }
+            if(gamepad2.dpad_up){
+                specimenArmTarget = scoring;
+            }else if(gamepad2.dpad_down){
+                specimenArmTarget = resting;
+            }else if(gamepad2.dpad_right){
+                specimenArmTarget = grabbing;
+            }else if(gamepad2.dpad_left){
+                specimenArmTarget = readiness;
             }
             viper_slide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             if(gamepad2.left_stick_y > 0){
@@ -163,19 +196,15 @@ public class drive extends LinearOpMode {
                 double power = pid + ff;
                 viper_slide.setPower(power);
             }
-            if (gamepad2.right_stick_y > 0) {
+            if (gamepad2.right_stick_y != 0) {
                 //in
-                arm.setPower(gamepad2.right_stick_y * 0.75);
-                arm_target = arm.getCurrentPosition();
-            } else if (gamepad2.right_stick_y < 0) {
-                //out
-                arm.setPower(gamepad2.right_stick_y * 0.75);
+                arm.setPower(-gamepad2.right_stick_y);
                 arm_target = arm.getCurrentPosition();
             } else if (liftPower) {
                 if(armPowerChoice) {
-                    arm.setPower(1);
-                }else{
                     arm.setPower(-1);
+                }else{
+                    arm.setPower(1);
                 }
             } else {
                 arm_controller.setPID(Ap, Ai, Ad);
@@ -183,37 +212,34 @@ public class drive extends LinearOpMode {
                 double pid = arm_controller.calculate(armPos, arm_target);
                 double ff = Math.cos(Math.toRadians(arm_target / ticks_in_degrees)) * Af;
                 double power = pid + ff;
-                arm.setPower(power);
+                if(armPowerChoice){arm.setPower(-power);}
+                else{arm.setPower(power);}
             }
             if(gamepad2.right_bumper){
-                if(liftPower){
-                    liftPower = false;
-                }else{
-                    liftPower = true;
-                }
+                liftPower = !liftPower;
             }
             if(gamepad2.left_bumper){
-                if(armPowerChoice){
-                    armPowerChoice = false;
-                }else{
-                    armPowerChoice = true;
-                }
+                armPowerChoice = !armPowerChoice;
             }
             if(gamepad2.a){
                 //close
                 claw.setPosition(claw.MAX_POSITION);
+                speclaw.setPosition(1);
 
             }
             if(gamepad2.b){
                 //close
                 claw.setPosition(claw.MIN_POSITION);
+                speclaw.setPosition(0);
             }
+            specarmS();
             //yiuyuioyoiuyio
 
             telemetry.addData("Status", "Run Time: " + runtime);
             telemetry.addData("Front left/Right", JavaUtil.formatNumber(leftFrontPower, 4, 2) + ", " + JavaUtil.formatNumber(rightFrontPower, 4, 2));
             telemetry.addData("Back  left/Right", JavaUtil.formatNumber(leftBackPower, 4, 2) + ", " + JavaUtil.formatNumber(rightBackPower, 4, 2));
-            telemetry.addData("ViperPosition", arm.getCurrentPosition());
+            telemetry.addData("ViperPosition", specarm.getCurrentPosition());
+            telemetry.addData("armtarget", specimenArmTarget);
             telemetry.addData("claw", claw.MAX_POSITION);
             telemetry.addData("ArmPowerChoice", armPowerChoice);
             telemetry.addData("LiftPowerON", liftPower);
@@ -237,6 +263,15 @@ public class drive extends LinearOpMode {
         leftBackPower = gamepad1.a ? 1 : 0;
         rightFrontPower = gamepad1.y ? 1 : 0;
         rightBackPower = gamepad1.b ? 1 : 0;
+    }
+    private void specarmS(){
+        spec_controller = new PIDController(Sp,Si,Sd);
+        spec_controller.setPID(Sp,Si,Sd);
+        speciPos = -specarm.getCurrentPosition();
+        speciPid = spec_controller.calculate(speciPos,specimenArmTarget);
+        speciFF = Math.cos((Math.toRadians((specimenArmTarget / 1.493333) * Sf) ));
+        double power =  speciPid+ speciFF;
+        specarm.setPower(power);
     }
 }
 

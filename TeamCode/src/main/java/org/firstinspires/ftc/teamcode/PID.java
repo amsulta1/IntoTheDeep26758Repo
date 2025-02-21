@@ -1,23 +1,13 @@
-package org.firstinspires.ftc.teamcode.drive;
+package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDController;
-import com.arcrobotics.ftclib.drivebase.MecanumDrive;
-import com.arcrobotics.ftclib.hardware.motors.Motor;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 
-@Config
-
-@Autonomous(name = "CrazyAutonomous", preselectTeleOp = "drive")
-public class auto extends OpMode {
+public class PID extends OpMode {
     private PIDController specimenArmPID;
 
     double speciPos;
@@ -40,8 +30,6 @@ public class auto extends OpMode {
         specimenArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         specimenArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        specimenArm.setDirection(DcMotorSimple.Direction.REVERSE);
-
         specimenArmPID = new PIDController(sP,sI,sD);
 
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -50,16 +38,12 @@ public class auto extends OpMode {
 
     @Override
     public void loop() {
-        specimenArmPID = new PIDController(sP,sI,sD);
-        specimenArmPID.setPID(sP,sI,sD);
-        speciPos = -specimenArm.getCurrentPosition();
-        speciPid = specimenArmPID.calculate(speciPos,specimenArmTarget);
-        speciFF = Math.cos((Math.toRadians((specimenArmTarget / ticks_in_degrees) ))) * sF;
-        double power =  speciPid+ speciFF;
-        specimenArm.setPower(power);
 
-        telemetry.addData("pos", speciPos);
-        telemetry.addData("target", specimenArmTarget);
-        telemetry.update();
+        specimenArmPID.setPID(sP,sI,sD);
+        speciPos = specimenArm.getCurrentPosition();
+        speciPid = specimenArmPID.calculate(speciPos,specimenArmTarget);
+        speciFF = Math.cos((Math.toRadians((specimenArmTarget / ticks_in_degrees) * sF) ));
+
     }
+
 }
