@@ -11,6 +11,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
 
+import java.util.concurrent.TimeUnit;
+
 @TeleOp(name = "TheOnlyDrive")
 public class drive extends LinearOpMode {
 
@@ -49,6 +51,7 @@ public class drive extends LinearOpMode {
     double speciFF;
     public static int specimenArmTarget;
     public final double ticks_in_degrees = 700 / 180.0;
+    float timeWhenScore = 0f;
 
     boolean liftPower = false;
     boolean armPowerChoice = true;
@@ -120,7 +123,7 @@ public class drive extends LinearOpMode {
         // Wait for the game to start (driver presses START)
         //claw.setPosition(0.25);
         resting = 0;
-        grabbing = 347;
+        grabbing = 330;
         readiness = 115;
         scoring =  200;
         viper_slide.setPower(-0.08);
@@ -170,6 +173,7 @@ public class drive extends LinearOpMode {
             }
             if(gamepad2.dpad_up){
                 specimenArmTarget = scoring;
+                timeWhenScore = runtime.time(TimeUnit.SECONDS);
             }else if(gamepad2.dpad_down){
                 specimenArmTarget = resting;
             }else if(gamepad2.dpad_right){
@@ -198,11 +202,17 @@ public class drive extends LinearOpMode {
             }
             if (gamepad2.right_stick_y != 0) {
                 //in
+                //-power = up
+                //+power = down
                 arm.setPower(-gamepad2.right_stick_y);
                 arm_target = arm.getCurrentPosition();
             } else if (liftPower) {
                 if(armPowerChoice) {
                     arm.setPower(-1);
+                    runtime.reset();
+                    while(runtime.seconds() < 2){
+                        //nothing
+                    }
                 }else{
                     arm.setPower(1);
                 }
@@ -264,14 +274,16 @@ public class drive extends LinearOpMode {
         rightFrontPower = gamepad1.y ? 1 : 0;
         rightBackPower = gamepad1.b ? 1 : 0;
     }
-    private void specarmS(){
-        spec_controller = new PIDController(Sp,Si,Sd);
-        spec_controller.setPID(Sp,Si,Sd);
-        speciPos = -specarm.getCurrentPosition();
-        speciPid = spec_controller.calculate(speciPos,specimenArmTarget);
-        speciFF = Math.cos((Math.toRadians((specimenArmTarget / 1.493333) * Sf) ));
-        double power =  speciPid+ speciFF;
-        specarm.setPower(power);
+    private void specarmS() {
+        if (specimenArmTarget != resting) {
+            spec_controller = new PIDController(Sp, Si, Sd);
+            spec_controller.setPID(Sp, Si, Sd);
+            speciPos = -specarm.getCurrentPosition();
+            speciPid = spec_controller.calculate(speciPos, specimenArmTarget);
+            speciFF = Math.cos((Math.toRadians((specimenArmTarget / 1.493333) * Sf)));
+            double power = speciPid + speciFF;
+            specarm.setPower(power);
+        }
     }
 }
 
