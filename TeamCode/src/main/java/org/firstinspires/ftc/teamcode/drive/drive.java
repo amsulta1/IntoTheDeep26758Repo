@@ -108,6 +108,7 @@ public class drive extends LinearOpMode {
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
         // <--- Click blue icon to see important note re. testing motor directions.
         left_front_drive.setDirection(DcMotor.Direction.REVERSE);
+        //wassup
         left.setDirection(DcMotor.Direction.REVERSE);
         specarm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         specarm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);

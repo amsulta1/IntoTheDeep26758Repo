@@ -49,6 +49,7 @@ public class auto extends OpMode {
         drive = new SampleMecanumDrive(hardwareMap);
         Pose2d startPose = new Pose2d(-2, 0, 0);
         drive.setPoseEstimate(startPose);
+        //wassup
         {
             run = drive.trajectorySequenceBuilder(startPose)
                     .addTemporalMarker(3, () ->{
